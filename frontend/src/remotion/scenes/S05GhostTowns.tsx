@@ -9,6 +9,7 @@ export const S05GhostTowns: React.FC<{
   const frame = useCurrentFrame();
 
   const files = ghostFiles.slice(0, 7);
+  const hasGhosts = files.length > 0;
 
   const headerOpacity = interpolate(frame, [0, 15],  [0, 1], { extrapolateRight: "clamp" });
   const titleOpacity  = interpolate(frame, [12, 30], [0, 1], { extrapolateRight: "clamp" });
@@ -17,13 +18,15 @@ export const S05GhostTowns: React.FC<{
   return (
     <div style={{
       width: "100%", height: "100%",
-      background: "radial-gradient(ellipse at 50% 30%, #0a0a16 0%, #050508 65%)",
+      background: hasGhosts
+        ? "radial-gradient(ellipse at 50% 30%, #0a0a16 0%, #050508 65%)"
+        : "radial-gradient(ellipse at 50% 30%, #0a160a 0%, #050508 65%)",
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
       fontFamily: "sans-serif",
       position: "relative",
     }}>
-      <div style={{ opacity: headerOpacity, fontSize: 13, color: "#5566aa", letterSpacing: 6, textTransform: "uppercase", marginBottom: 20 }}>
+      <div style={{ opacity: headerOpacity, fontSize: 13, color: hasGhosts ? "#5566aa" : "#5DCAA5", letterSpacing: 6, textTransform: "uppercase", marginBottom: 20 }}>
         Ghost Files
       </div>
 
@@ -31,15 +34,15 @@ export const S05GhostTowns: React.FC<{
         opacity: titleOpacity, transform: `translateY(${titleY}px)`,
         fontSize: 52, fontWeight: 800, color: "#fff",
         marginBottom: 48, textAlign: "center",
-        textShadow: "0 0 40px #5566aa44",
+        textShadow: hasGhosts ? "0 0 40px #5566aa44" : "0 0 40px #5DCAA544",
       }}>
-        Abandoned. Forgotten.
+        {hasGhosts ? "Abandoned. Forgotten." : "All Fresh. No Ghosts."}
       </div>
 
       {/* terminal box */}
       <div style={{
         background: "#080810",
-        border: "1px solid #1a1a30",
+        border: `1px solid ${hasGhosts ? "#1a1a30" : "#1a301a"}`,
         borderRadius: 12,
         padding: "22px 32px",
         width: 820,
@@ -52,10 +55,9 @@ export const S05GhostTowns: React.FC<{
           ))}
         </div>
 
-        {files.map((file, i) => {
+        {hasGhosts ? files.map((file, i) => {
           const start   = 32 + i * 10;
           const entered = interpolate(frame, [start, start + 12], [0, 1], { extrapolateRight: "clamp" });
-          // ghost pulse after fully visible
           const pulse   = 0.45 + 0.55 * Math.abs(Math.sin((frame - start) * 0.08));
           const opacity = frame < start ? 0 : entered < 1 ? entered : pulse;
 
@@ -70,7 +72,16 @@ export const S05GhostTowns: React.FC<{
               {file}
             </div>
           );
-        })}
+        }) : (() => {
+          const msgOpacity = interpolate(frame, [32, 50], [0, 1], { extrapolateRight: "clamp" });
+          return (
+            <div style={{ opacity: msgOpacity, fontFamily: "monospace", fontSize: 15, color: "#5DCAA5" }}>
+              <div style={{ marginBottom: 10 }}>$ find . -mtime +180 -type f</div>
+              <div style={{ color: "#2a4a2a", marginBottom: 10 }}>{"// no results"}</div>
+              <div style={{ color: "#5DCAA5" }}>All files are recently active — this codebase has no ghosts.</div>
+            </div>
+          );
+        })()}
       </div>
 
       <Subtitle text={narration} startFrame={140} />
