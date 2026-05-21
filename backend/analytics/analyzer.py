@@ -186,6 +186,7 @@ def run_analytics(repo_data: RepoData) -> Dict[str, Any]:
         "message": hero_row["message"],
         "lines_changed": int(hero_row["lines_added"] + hero_row["lines_deleted"]),
         "timestamp": str(hero_row["timestamp"].date()),
+        "diff_excerpt": hero_row["diff_excerpt"] if "diff_excerpt" in commits_reset.columns else None,
     }
 
     # ── PART 6: Plot twist detection ────────────────────────────────────────

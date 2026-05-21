@@ -11,6 +11,7 @@ class CommitData(BaseModel):
     files_changed: int          # how many files were touched
     lines_added: int            # lines of code added
     lines_deleted: int          # lines of code deleted
+    diff_excerpt: Optional[str] = None  # patch lines from the first changed file
 
 # ContributorStats represents one contributor's overall stats
 class ContributorStats(BaseModel):

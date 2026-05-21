@@ -3,22 +3,28 @@ import { useCurrentFrame, interpolate } from "remotion";
 import type { HeroCommit } from "../types";
 import { Subtitle } from "../Subtitle";
 
-const DIFF_LINES = [
-  { type: "add",     text: "+ feat: complete rewrite of core engine"              },
-  { type: "add",     text: "+ const engine = new CoreEngine({ optimized: true })" },
-  { type: "remove",  text: "- const engine = new OldEngine()"                     },
-  { type: "add",     text: "+ engine.init(config)"                                },
-  { type: "neutral", text: "  // Performance improved 10x"                        },
-  { type: "add",     text: "+ export default engine"                              },
-];
-
 const LINE_COLOR = { add: "#5DCAA5", remove: "#e05a5a", neutral: "#44445a" };
+
+function buildDiffLines(heroCommit: HeroCommit) {
+  // Prefer real patch lines from the diff, fall back to commit message
+  const source = heroCommit.diff_excerpt ?? heroCommit.message;
+  const raw = source.split("\n").map((l) => l.trimEnd()).filter(Boolean).slice(0, 8);
+  return raw.map((text) => {
+    if (text.startsWith("-"))  return { type: "remove" as const, text };
+    if (text.startsWith("+"))  return { type: "add"    as const, text };
+    if (text.startsWith("@@")) return { type: "neutral" as const, text };
+    if (text.startsWith("//") || text.startsWith("#")) return { type: "neutral" as const, text: `  ${text}` };
+    // message line — prefix as addition
+    return { type: "add" as const, text: `+ ${text}` };
+  });
+}
 
 export const S06HeroCommit: React.FC<{
   heroCommit: HeroCommit;
   narration: string;
 }> = ({ heroCommit, narration }) => {
   const frame = useCurrentFrame();
+  const DIFF_LINES = buildDiffLines(heroCommit);
 
   const labelOpacity = interpolate(frame, [0, 15],  [0, 1], { extrapolateRight: "clamp" });
   const boxOpacity   = interpolate(frame, [12, 28], [0, 1], { extrapolateRight: "clamp" });

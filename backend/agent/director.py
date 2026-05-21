@@ -136,6 +136,7 @@ Speak naturally. Use contractions. Vary sentence rhythm. Sound like a real perso
         lines_changed=hero_raw.get("lines_changed", 0),
         timestamp=hero_raw.get("timestamp", ""),
         narration_text=hero_narration,
+        diff_excerpt=hero_raw.get("diff_excerpt"),
     )
 
     # package everything into ScriptJSON and return

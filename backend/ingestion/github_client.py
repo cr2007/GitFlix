@@ -74,10 +74,19 @@ def fetch_repo_data(repo_url: str, max_commits: int=100, on_progress: Optional[C
         if idx < detailed_limit:
             try:
                 # This triggers API calls for files and stats
-                files_changed = len(list(commit.files)) if commit.files else 0
+                file_list = list(commit.files) if commit.files else []
+                files_changed = len(file_list)
                 lines_added = commit.stats.additions if commit.stats else 0
                 lines_deleted = commit.stats.deletions if commit.stats else 0
-                
+
+                # Grab up to 8 patch lines from the first file that has a patch
+                diff_excerpt = None
+                for f in file_list:
+                    if getattr(f, "patch", None):
+                        lines = f.patch.splitlines()[:8]
+                        diff_excerpt = "\n".join(lines)
+                        break
+
                 commits_raw.append(CommitData(
                     sha=commit.sha[:8],
                     author_login=author_login,
@@ -86,6 +95,7 @@ def fetch_repo_data(repo_url: str, max_commits: int=100, on_progress: Optional[C
                     files_changed=files_changed,
                     lines_added=lines_added,
                     lines_deleted=lines_deleted,
+                    diff_excerpt=diff_excerpt,
                 ))
                 
                 # Update line stats for contributors, for better tracking

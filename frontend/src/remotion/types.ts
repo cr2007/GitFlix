@@ -22,6 +22,7 @@ export interface HeroCommit {
   lines_changed: number;
   timestamp: string;
   narration_text: string;
+  diff_excerpt?: string;
 }
 
 // one scene in the documentary
