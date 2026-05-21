@@ -83,7 +83,7 @@ export const S02Cast: React.FC<{
                 <div style={{ fontSize: 12, color: char.color, textTransform: "uppercase", letterSpacing: 2, marginBottom: 12 }}>
                   {ROLE_LABELS[char.role]}
                 </div>
-                <div style={{ fontSize: 14, color: "#2a2a40", lineHeight: 1.6 }}>
+                <div style={{ fontSize: 14, color: "#9090b8", lineHeight: 1.6 }}>
                   {char.arc_summary}
                 </div>
               </div>
