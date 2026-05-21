@@ -68,7 +68,7 @@ export default function App() {
     setError(""); setStage("loading"); setProgress({ pct: 0, msg: "Connecting..." });
 
     try {
-      const healthRes = await fetch(`${API}/health`);
+      const healthRes = await fetch(`${API}/status`);
       if (!healthRes.ok) {
         throw new Error(`Backend health check failed with status ${healthRes.status}.`);
       }

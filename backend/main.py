@@ -172,7 +172,7 @@ async def generate_stream(repo_url: str, tone: Literal["epic", "documentary", "c
         }
     )
 
-@app.get("/health")
+@app.get("/status")
 async def health():
     status = _runtime_config_status()
     return {
