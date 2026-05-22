@@ -59,6 +59,11 @@ def fetch_repo_data(repo_url: str, max_commits: int=100, on_progress: Optional[C
     contrib_map = defaultdict(lambda: {
         "commits": 0, "lines": 0, "first": None, "last": None, "months": set()
     })
+
+    # per-file tracking — built from files we already fetch in the detailed loop, zero extra API calls
+    def _file_entry():
+        return {"first": None, "last": None, "count": 0, "authors": set()}
+    file_map: dict[str, dict] = defaultdict(_file_entry)
     
     if on_progress: on_progress(15, f"Analyzing {total_to_scan} commits...")
     
@@ -86,6 +91,14 @@ def fetch_repo_data(repo_url: str, max_commits: int=100, on_progress: Optional[C
                         lines = f.patch.splitlines()[:8]
                         diff_excerpt = "\n".join(lines)
                         break
+
+                # Track per-file last/first touched using timestamps we already have
+                for f in file_list:
+                    fm = file_map[f.filename]
+                    fm["count"] += 1
+                    fm["authors"].add(author_login)
+                    if not fm["first"] or timestamp < fm["first"]: fm["first"] = timestamp
+                    if not fm["last"]  or timestamp > fm["last"]:  fm["last"]  = timestamp
 
                 commits_raw.append(CommitData(
                     sha=commit.sha[:8],
@@ -141,24 +154,24 @@ def fetch_repo_data(repo_url: str, max_commits: int=100, on_progress: Optional[C
     ]
     contributors.sort(key=lambda x: x.total_commits, reverse=True)
 
-    # Step 3: File Histories (Optimized)
+    # Step 3: File Histories — derived from file_map built during the detailed commit loop
     if on_progress: on_progress(28, "Analyzing file activity...")
-    file_map = defaultdict(lambda: {"modified": 0, "authors": set(), "dates": []})
-    
-    # Re-use the commits we already fetched to build file history
-    # Instead of making NEW API calls for files, we use the ones we got in the detailed loop
-    # If we need more, we limit it strictly
-    for c_data in commits_raw:
-        # Note: In a real app, we might need more file data, but for a 1-min film, 
-        # the last 100 commits are usually enough to find "ghost" files or active areas.
-        pass # The previous implementation was doing ANOTHER loop with 200 API calls.
-             # We'll skip that and just use some reasonable defaults or a single call if needed.
-    
-    # Let's do a single check for "ghost towns" using the repository's contents if possible,
-    # or just stick to the commit data we have to stay fast.
-    
+    ghost_cutoff = datetime.now(timezone.utc) - timedelta(days=180)
     file_histories = []
-    # (Simplified for speed)
+    for path, fm in file_map.items():
+        if not fm["first"] or not fm["last"]:
+            continue
+        last_modified = fm["last"] if fm["last"].tzinfo else fm["last"].replace(tzinfo=timezone.utc)
+        first_seen    = fm["first"] if fm["first"].tzinfo else fm["first"].replace(tzinfo=timezone.utc)
+        is_ghost = last_modified < ghost_cutoff
+        file_histories.append(FileHistory(
+            path=path,
+            created=first_seen,
+            last_modified=last_modified,
+            total_modifications=fm["count"],
+            authors=list(fm["authors"]),
+            is_ghost=is_ghost,
+        ))
     
     if on_progress: on_progress(30, "Finalizing repository data...")
     
