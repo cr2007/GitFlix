@@ -1,10 +1,11 @@
-from langchain.tools import tool
-from typing import Dict, Any
 import json
+
+from langchain.tools import tool
 
 # each function below is a "tool" the LangChain agent can call
 # the agent passes the full analytics dict as a JSON string
 # each tool pulls out one specific piece of information
+
 
 @tool
 def analyze_contributors(analytics: str) -> str:
@@ -16,6 +17,7 @@ def analyze_contributors(analytics: str) -> str:
     # return as JSON string (agent works with strings)
     return json.dumps(characters)
 
+
 @tool
 def detect_plot_twist(analytics: str) -> str:
     """Find the most dramatic moment in the repo history — a commit spike, major refactor, or contributor exodus."""
@@ -26,11 +28,13 @@ def detect_plot_twist(analytics: str) -> str:
         return json.dumps({"found": False})
     return json.dumps({**pt, "found": True})
 
+
 @tool
 def find_hero_commit(analytics: str) -> str:
     """Identify the single most impactful commit in the repository."""
     data = json.loads(analytics)
     return json.dumps(data.get("hero_commit", {}))
+
 
 @tool
 def identify_ghost_files(analytics: str) -> str:
@@ -38,9 +42,9 @@ def identify_ghost_files(analytics: str) -> str:
     data = json.loads(analytics)
     return json.dumps(data.get("ghost_files", []))
 
+
 @tool
 def get_commit_series(analytics: str) -> str:
     """Get the weekly commit timeseries for the animated rise scene."""
     data = json.loads(analytics)
     return json.dumps(data.get("commit_series", []))
-

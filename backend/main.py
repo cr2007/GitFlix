@@ -1,15 +1,23 @@
+import asyncio
+import json
+import logging
+import os
+import queue
+import threading
+import time
+
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
-from typing import Literal
-from fastapi.middleware.cors import CORSMiddleware # for forntend to talk to backend
+from fastapi.middleware.cors import CORSMiddleware  # for forntend to talk to backend
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-import asyncio, json, os, logging, queue, threading, time
-from dotenv import load_dotenv
-load_dotenv()
-from ingestion.github_client import fetch_repo_data
-from analytics.analyzer import run_analytics
+from typing import Literal
+
 from agent.director import build_script
-from schemas import RepoData
+from analytics.analyzer import run_analytics
+from ingestion.github_client import fetch_repo_data
+
+load_dotenv()
 
 log = logging.getLogger("gitflix")
 
@@ -17,20 +25,22 @@ log = logging.getLogger("gitflix")
 _CACHE: dict = {}
 _CACHE_TTL = 600
 
+
 def _cache_get(key: tuple):
     entry = _CACHE.get(key)
     if entry and entry[1] > time.monotonic():
         return entry[0]
     return None
 
+
 def _cache_set(key: tuple, value):
     _CACHE[key] = (value, time.monotonic() + _CACHE_TTL)
+
 
 app = FastAPI(title="GitFlix API")
 
 ALLOWED_ORIGINS = os.getenv(
-    "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://localhost:3000"
+    "ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000"
 ).split(",")
 
 app.add_middleware(
@@ -41,9 +51,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class GenerateRequest(BaseModel):
     repo_url: str
-    tone: Literal["epic", "documentary", "casual"] = "documentary"
+    tone:     Literal["epic", "documentary", "casual"] = "documentary"
 
 
 def _runtime_config_status() -> dict:
@@ -53,9 +64,7 @@ def _runtime_config_status() -> dict:
     if not os.getenv("GROQ_API_KEY"):
         missing_required.append("GROQ_API_KEY")
     if not os.getenv("GITHUB_TOKEN"):
-        warnings.append(
-            "GITHUB_TOKEN is not set. Public GitHub requests may be rate-limited."
-        )
+        warnings.append("GITHUB_TOKEN is not set. Public GitHub requests may be rate-limited.")
 
     return {
         "ok": not missing_required,
@@ -73,24 +82,29 @@ def _require_runtime_config() -> None:
             detail=f"Backend is missing required environment variables: {missing}",
         )
 
+
 @app.post("/generate")
 async def generate(req: GenerateRequest):
     _require_runtime_config()
     cache_key = (req.repo_url.strip().lower(), req.tone)
     cached = _cache_get(cache_key)
-    if cached: return cached
+    if cached:
+        return cached
     try:
-        repo_data  = await asyncio.to_thread(fetch_repo_data, req.repo_url)
-        analytics  = await asyncio.to_thread(run_analytics, repo_data)
-        script     = await asyncio.to_thread(build_script, analytics, req.tone)
+        repo_data = await asyncio.to_thread(fetch_repo_data, req.repo_url)
+        analytics = await asyncio.to_thread(run_analytics, repo_data)
+        script = await asyncio.to_thread(build_script, analytics, req.tone)
         _cache_set(cache_key, script)
         return script
     except Exception as e:
         log.error("[/generate] %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/generate/stream")
-async def generate_stream(repo_url: str, tone: Literal["epic", "documentary", "casual"] = "documentary"):
+async def generate_stream(
+    repo_url: str, tone: Literal["epic", "documentary", "casual"] = "documentary"
+):
     repo_url = repo_url.strip().lower()
     cache_key = (repo_url, tone)
     config_status = _runtime_config_status()
@@ -109,7 +123,7 @@ async def generate_stream(repo_url: str, tone: Literal["epic", "documentary", "c
 
             # Use a standard thread-safe queue for cross-thread communication
             q = queue.Queue()
-            
+
             def progress_cb(pct, msg):
                 q.put({"type": "progress", "pct": pct, "msg": msg})
 
@@ -168,9 +182,10 @@ async def generate_stream(repo_url: str, tone: Literal["epic", "documentary", "c
         headers={
             "X-Accel-Buffering": "no",
             "Cache-Control": "no-cache",
-            "Connection": "keep-alive"
-        }
+            "Connection": "keep-alive",
+        },
     )
+
 
 @app.get("/status")
 async def health():

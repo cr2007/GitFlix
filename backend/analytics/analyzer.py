@@ -1,15 +1,22 @@
-import pandas as pd
-import numpy as np
 from datetime import datetime, timezone
-from typing import Dict, Any
 from schemas import RepoData
+from typing import Any
+
+import pandas as pd
 
 # Colours assigned to each contributor in the film — used in S02 (The Cast) and S03 (The Rise)
 # Each contributor gets one colour, cycling if there are more than 8
 CONTRIBUTOR_COLORS = [
-    "#5DCAA5", "#7F77DD", "#EF9F27", "#D85A30",
-    "#378ADD", "#D4537E", "#639922", "#888780"
+    "#5DCAA5",
+    "#7F77DD",
+    "#EF9F27",
+    "#D85A30",
+    "#378ADD",
+    "#D4537E",
+    "#639922",
+    "#888780",
 ]
+
 
 def _arc_summary(role: str, login: str, commits: int) -> str:
     # One sentence description of each character — shown in S02 (The Cast)
@@ -22,7 +29,7 @@ def _arc_summary(role: str, login: str, commits: int) -> str:
     return summaries.get(role, f"{login} contributed {commits} commits.")
 
 
-def run_analytics(repo_data: RepoData) -> Dict[str, Any]:
+def run_analytics(repo_data: RepoData) -> dict[str, Any]:
 
     # ── PART 1: Build the DataFrame ─────────────────────────────────────────
     # Used by: ALL scenes (this is the foundation everything else is built on)
@@ -58,7 +65,7 @@ def run_analytics(repo_data: RepoData) -> Dict[str, Any]:
     #         SPREAD AROUND the mean. A high std means the repo is bursty;
     #         a low std means it's steady and predictable.
     mean = weekly["count"].mean()
-    std  = weekly["count"].std()
+    std = weekly["count"].std()
 
     # WHY 2 * STD (2σ)?
     #   In a roughly NORMAL distribution, ~95% of values fall within mean ± 2σ.
@@ -101,20 +108,24 @@ def run_analytics(repo_data: RepoData) -> Dict[str, Any]:
         # If the gap between era_start and this dead week is more than 28 days,
         # a proper active period happened — save it as a completed era
         if (row["week"] - era_start).days > 28:
-            eras.append({
-                "start": str(era_start.date()),
-                "end": str(row["week"].date()),
-                "label": "Active period",
-            })
+            eras.append(
+                {
+                    "start": str(era_start.date()),
+                    "end": str(row["week"].date()),
+                    "label": "Active period",
+                }
+            )
             # Move era_start forward to after this dead zone
             era_start = row["week"]
 
     # Always add the final era (from last dead zone to last commit)
-    eras.append({
-        "start": str(era_start.date()),
-        "end": str(commits_df.index.max().date()),
-        "label": "Latest era",
-    })
+    eras.append(
+        {
+            "start": str(era_start.date()),
+            "end": str(commits_df.index.max().date()),
+            "label": "Latest era",
+        }
+    )
 
     # ── PART 4: Character arc assignment ────────────────────────────────────
     # Used by: S02 (The Cast) — each contributor becomes a character with a role
@@ -125,7 +136,9 @@ def run_analytics(repo_data: RepoData) -> Dict[str, Any]:
     now = pd.Timestamp.now(tz="UTC")
 
     # Find the midpoint of the repo's life — used to detect late joiners
-    repo_midpoint = commits_df.index.min() + (commits_df.index.max() - commits_df.index.min()) / 2
+    repo_midpoint = (
+        commits_df.index.min() + (commits_df.index.max() - commits_df.index.min()) / 2
+    )
 
     characters = []
     max_commits = max(c.total_commits for c in repo_data.contributors)
@@ -156,14 +169,16 @@ def run_analytics(repo_data: RepoData) -> Dict[str, Any]:
             # Everyone else — just showed up consistently
             role = "consistent"
 
-        characters.append({
-            "login": contrib.login,
-            "color": CONTRIBUTOR_COLORS[i % len(CONTRIBUTOR_COLORS)],
-            "role": role,
-            "commit_count": contrib.total_commits,
-            "active_months": contrib.active_months,
-            "arc_summary": _arc_summary(role, contrib.login, contrib.total_commits),
-        })
+        characters.append(
+            {
+                "login": contrib.login,
+                "color": CONTRIBUTOR_COLORS[i % len(CONTRIBUTOR_COLORS)],
+                "role": role,
+                "commit_count": contrib.total_commits,
+                "active_months": contrib.active_months,
+                "arc_summary": _arc_summary(role, contrib.login, contrib.total_commits),
+            }
+        )
 
     # ── PART 5: Hero commit detection ───────────────────────────────────────
     # Used by: S06 (The Hero Moment) — shown as the single biggest commit card
@@ -186,7 +201,9 @@ def run_analytics(repo_data: RepoData) -> Dict[str, Any]:
         "message": hero_row["message"],
         "lines_changed": int(hero_row["lines_added"] + hero_row["lines_deleted"]),
         "timestamp": str(hero_row["timestamp"].date()),
-        "diff_excerpt": hero_row["diff_excerpt"] if "diff_excerpt" in commits_reset.columns else None,
+        "diff_excerpt": hero_row["diff_excerpt"]
+        if "diff_excerpt" in commits_reset.columns
+        else None,
     }
 
     # ── PART 6: Plot twist detection ────────────────────────────────────────
@@ -194,7 +211,7 @@ def run_analytics(repo_data: RepoData) -> Dict[str, Any]:
     # Plot twist = the spike week with the highest commit count
 
     # Filter to only the weeks marked as spikes
-    spike_rows = weekly[weekly["is_spike"] == True]
+    spike_rows = weekly[weekly["is_spike"]]
 
     # Default is None — some repos have no spikes at all, S04 still renders with fallback
     plot_twist = None
@@ -233,7 +250,10 @@ def run_analytics(repo_data: RepoData) -> Dict[str, Any]:
         "primary_language": repo_data.primary_language,
         "total_commits": repo_data.total_commits,
         "repo_age_days": (datetime.now(timezone.utc) - repo_data.created_at).days,
-        "commit_series": [{"week": str(r["week"].date()), "count": int(r["count"])} for r in commit_series],
+        "commit_series": [
+            {"week": str(r["week"].date()), "count": int(r["count"])}
+            for r in commit_series
+        ],
         "eras": eras,
         "characters": characters,
         "hero_commit": hero_commit,

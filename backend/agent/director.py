@@ -1,26 +1,31 @@
-from typing import Dict, Any
 import json
-from schemas import ScriptJSON, Scene, Character, Era, PlotTwist, HeroCommit
+from typing import Any
+
 from agent.llm_balancer import LLMLoadBalancer
 from agent.tools import (
-    analyze_contributors, detect_plot_twist,
-    find_hero_commit, identify_ghost_files, get_commit_series
+    analyze_contributors,
+    detect_plot_twist,
+    find_hero_commit,
+    identify_ghost_files,
+    get_commit_series,
 )
+from schemas import ScriptJSON, Scene, Character, Era, PlotTwist, HeroCommit
 
 # 7 scenes — id, title, duration in seconds, fallback narration
 # fallback is used if the LLM fails to generate narration
 SCENE_TEMPLATES = {
-    "S01": ("The origin",          8,  "The story begins."),
-    "S02": ("The cast",            12, "Meet the people who built this."),
-    "S03": ("The rise",            20, "Watch the codebase come alive."),
-    "S04": ("The plot twist",      10, "Then everything changed."),
-    "S05": ("Ghost towns",         8,  "Some ideas were left behind."),
-    "S06": ("The hero moment",     12, "One commit changed everything."),
+    "S01": ("The origin", 8, "The story begins."),
+    "S02": ("The cast", 12, "Meet the people who built this."),
+    "S03": ("The rise", 20, "Watch the codebase come alive."),
+    "S04": ("The plot twist", 10, "Then everything changed."),
+    "S05": ("Ghost towns", 8, "Some ideas were left behind."),
+    "S06": ("The hero moment", 12, "One commit changed everything."),
     "S07": ("The state of the world", 15, "This is what was built."),
 }
 
+
 # narrate funnction + the tool calling
-def build_script(analytics: Dict[str, Any], tone: str) -> ScriptJSON:
+def build_script(analytics: dict[str, Any], tone: str) -> ScriptJSON:
 
     # set up the LLM balancer — round-robins across llama models with fallback
     llm = LLMLoadBalancer(temperature=0.7)
@@ -45,10 +50,10 @@ Speak naturally. Use contractions. Vary sentence rhythm. Sound like a real perso
 
     # call all 5 tools to pull story data from analytics
     # we return as json strings because Langchain passes datas as strings not Python Objects
-    contributors  = json.loads(analyze_contributors.invoke(analytics_str))
+    contributors = json.loads(analyze_contributors.invoke(analytics_str))
     plot_twist_raw = json.loads(detect_plot_twist.invoke(analytics_str))
-    hero_raw      = json.loads(find_hero_commit.invoke(analytics_str))
-    ghost_files   = json.loads(identify_ghost_files.invoke(analytics_str))
+    hero_raw = json.loads(find_hero_commit.invoke(analytics_str))
+    ghost_files = json.loads(identify_ghost_files.invoke(analytics_str))
     commit_series = json.loads(get_commit_series.invoke(analytics_str))
 
     # narrate() sends context to the LLM and gets back 2-3 sentences
@@ -70,12 +75,22 @@ Speak naturally. Use contractions. Vary sentence rhythm. Sound like a real perso
             return llm.invoke(prompt).content.strip()
         except Exception:
             return fallback
-        
-# map each scene to the context it needs for narration
+
+    # map each scene to the context it needs for narration
     # dates are passed explicitly so the LLM uses the real values, not guesses
-    first_week  = analytics["commit_series"][0]["week"][:4]  if analytics.get("commit_series") else None   # just the year e.g. "2023"
-    latest_week = analytics["commit_series"][-1]["week"][:4] if analytics.get("commit_series") else None
-    twist_week  = plot_twist_raw.get("week", "")[:4] if plot_twist_raw.get("week") else None  # year only
+    first_week = (
+        analytics["commit_series"][0]["week"][:4]
+        if analytics.get("commit_series")
+        else None
+    )  # just the year e.g. "2023"
+    latest_week = (
+        analytics["commit_series"][-1]["week"][:4]
+        if analytics.get("commit_series")
+        else None
+    )
+    twist_week = (
+        plot_twist_raw.get("week", "")[:4] if plot_twist_raw.get("week") else None
+    )  # year only
 
     # this is where the datas fed
     context_map = {
@@ -91,7 +106,6 @@ Speak naturally. Use contractions. Vary sentence rhythm. Sound like a real perso
     # build all 7 scenes
     scenes = []
     for scene_id, (title, duration, fallback) in SCENE_TEMPLATES.items():
-
         # generate narration for this scene using the LLM
         narration = narrate(scene_id, context_map[scene_id], fallback)
 
@@ -99,18 +113,23 @@ Speak naturally. Use contractions. Vary sentence rhythm. Sound like a real perso
         visual_params = {}
         if scene_id == "S03":
             # rise scene needs the full commit chart data
-            visual_params = {"commit_series": commit_series, "eras": analytics.get("eras", [])}
+            visual_params = {
+                "commit_series": commit_series,
+                "eras": analytics.get("eras", []),
+            }
         elif scene_id == "S06":
             # hero scene needs the hero commit details
             visual_params = {"hero": hero_raw}
 
-        scenes.append(Scene(
-            scene_id=scene_id,
-            title=title,
-            duration_secs=duration,
-            narration_text=narration,
-            visual_params=visual_params,
-        ))
+        scenes.append(
+            Scene(
+                scene_id=scene_id,
+                title=title,
+                duration_secs=duration,
+                narration_text=narration,
+                visual_params=visual_params,
+            )
+        )
 
     # build character objects from the contributors data
     # ** means unpack this dictionary into keyword arguments.
