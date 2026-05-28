@@ -1,6 +1,10 @@
 {
   "name": "frontend",
   "private": true,
+  "author": {
+    "name": "Sahil M"
+  },
+  "license": "GPL-3.0-only",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
