@@ -121,14 +121,13 @@ Speak naturally. Use contractions. Vary sentence rhythm. Sound like a real perso
         }
         for future in as_completed(future_to_key):
             key = future_to_key[future]
+            _, fallback = narration_tasks[key]
             try:
                 narrations[key] = future.result()
             except CancelledError:
-                executor.shutdown(wait=False, cancel_futures=True)
                 raise
             except Exception:
-                _, _, fallback = SCENE_TEMPLATES.get(key, (None, None, ""))
-                narrations[key] = fallback or ""
+                narrations[key] = fallback
 
     # Build scenes
     scenes = []
