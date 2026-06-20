@@ -1,3 +1,5 @@
+import NavBar from "../components/NavBar";
+
 interface Props {
   error: string;
   onRetry: () => void;
@@ -8,10 +10,8 @@ export default function ErrorScreen({ error, onRetry }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--bg)" }}>
-      <div style={{ height: 2, background: "linear-gradient(90deg, transparent, #dc2626, transparent)" }} />
-      <nav style={{ display: "flex", alignItems: "center", padding: "16px 48px", borderBottom: "1px solid #1e0a0a" }}>
-        <span style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 800, letterSpacing: -0.5 }}>GitFlix</span>
-      </nav>
+      <div style={{ height: 2, background: "linear-gradient(90deg, transparent, #dc2626, transparent)", position: "absolute", top: 0, left: 0, right: 0, zIndex: 11 }} />
+      <NavBar />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 520, width: "100%", margin: "0 auto", padding: "0 32px" }}>
         <div style={{ fontSize: 12, color: "#dc2626", letterSpacing: 3, textTransform: "uppercase", marginBottom: 16, fontFamily: "var(--font-display)", fontWeight: 600 }}>

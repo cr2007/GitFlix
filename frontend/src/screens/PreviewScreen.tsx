@@ -1,11 +1,9 @@
 import React from "react";
 import { Player } from "@remotion/player";
 import type { PlayerRef } from "@remotion/player";
-import { GitflixVideo } from "../remotion/GitflixVideo";
+import { GitflixVideo, FPS } from "../remotion/GitflixVideo";
 import type { ScriptJSON } from "../remotion/types";
 import NavBar from "../components/NavBar";
-
-const FPS = 30;
 const CHAPTERS = [
   { id: "S01", label: "Origin" },
   { id: "S02", label: "Cast" },

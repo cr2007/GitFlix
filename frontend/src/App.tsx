@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { PlayerRef } from "@remotion/player";
-import { SCENE_DURATIONS } from "./remotion/GitflixVideo";
+import { SCENE_DURATIONS, FPS } from "./remotion/GitflixVideo";
 import type { ScriptJSON } from "./remotion/types";
 import InputScreen   from "./screens/InputScreen";
 import LoadingScreen from "./screens/LoadingScreen";
@@ -8,7 +8,6 @@ import PreviewScreen from "./screens/PreviewScreen";
 import ErrorScreen   from "./screens/ErrorScreen";
 
 const API = (import.meta.env.VITE_API_URL ?? "").trim() || (import.meta.env.DEV ? "/api" : "");
-const FPS = 30;
 
 // cumulative start frame for each chapter
 const CHAPTER_IDS = ["S01","S02","S03","S04","S05","S06","S07"] as const;
