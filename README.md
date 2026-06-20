@@ -85,7 +85,7 @@ GROQ_API_KEY=your_groq_api_key
 Start the API server:
 
 ```bash
-uvicorn main:app --reload
+uv run uvicorn main:app --reload
 ```
 
 The API will be available at `http://localhost:8000`.
@@ -129,7 +129,10 @@ Open `http://localhost:5173` in your browser.
 |--------|----------|-------------|
 | `GET` | `/generate/stream` | Streams SSE progress events, then delivers the full script on completion |
 | `POST` | `/generate` | Runs the full pipeline and returns the script as JSON (no streaming) |
-| `GET` | `/health` | Health check |
+| `POST` | `/generate/cancel` | Cancels an in-progress generation |
+| `GET` | `/status` | Health check — returns `ok` or `degraded` with missing config details |
+
+> **Note for contributors:** This endpoint is intentionally named `/status` and not `/health`. Browser-based ad blockers silently block requests to URLs containing the word `health` (treating them as tracking or analytics calls) before the request ever leaves the browser. This caused the frontend to report the backend as unreachable even when the server was running perfectly — no backend logs, no CORS error, just a silent client-side block. Renaming to `/status` fixed it immediately.
 
 ### SSE event shape
 
