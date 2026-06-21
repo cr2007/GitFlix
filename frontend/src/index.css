@@ -1,15 +1,15 @@
 :root {
   --bg:           #050308;
-  --surface:      #0a0614;
-  --border:       #1a1030;
-  --border-dim:   #2e1f4a;
-  --accent:       #7c3aed;
-  --accent-glow:  #7c3aed66;
-  --accent-dim:   #7c3aed18;
+  --surface:      #0a0810;
+  --border:       #1a1510;
+  --border-dim:   #2e2518;
+  --accent:       #d4a843;
+  --accent-glow:  #d4a84340;
+  --accent-dim:   #d4a84315;
   --text:         #ffffff;
-  --text-muted:   #8875b0;
-  --text-mid:     #6a5a8a;
-  --text-active:  #c4b0f8;
+  --text-muted:   #8a7a60;
+  --text-mid:     #5e5040;
+  --text-active:  #f0d280;
   --font-display: 'Space Grotesk', sans-serif;
   --font-body:    'Inter', sans-serif;
 }
@@ -26,5 +26,20 @@ body {
 
 #root { min-height: 100vh; display: flex; flex-direction: column; }
 
-button { font-family: var(--font-body); cursor: pointer; }
-input  { font-family: var(--font-body); }
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: opacity 0.12s ease, transform 0.1s ease, border-color 0.12s ease, color 0.12s ease;
+}
+button:active { transform: scale(0.97); }
+
+input { font-family: var(--font-body); }
+
+.repo-input {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.repo-input:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
